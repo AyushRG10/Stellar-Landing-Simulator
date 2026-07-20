@@ -1,48 +1,43 @@
 import { keys } from "./input.js";
+import { drawShip } from "./render.js";
 
 const canvas = document.getElementById('gameCanvas');
 const ctx = canvas.getContext('2d');
-canvas.width = 800;
-canvas.height = 600;
+canvas.width = window.innerWidth;
+canvas.height = window.innerHeight;
 
 let lander = {
-  x: 400,
-  y: 100,
+  x: canvas.width / 2,
+  y: canvas.height / 2,
+  angle: 0,
   vx: 0,
   vy: 0,
-  angle: 0,
-}
+  thrust: 0.15,
+};
 
 function gameLoop() {
-  // 1, Update physics
-  if (keys.ArrowLeft) {
-    lander.angle -= 0.05;
-  }
-  if (keys.ArrowRight) {
-    lander.angle += 0.05;
-  }
+  // 1. Update physics (unchanged)
+  if (keys.ArrowLeft)  lander.angle -= 0.02;
+  if (keys.ArrowRight) lander.angle += 0.02;
   if (keys.ArrowUp) {
-    const thrust = 0.15;
-
-    lander.vx += Math.sin(lander.angle) * thrust;
-    lander.vy += -Math.cos(lander.angle) * thrust;
+    lander.vx -= lander.thrust * Math.cos(lander.angle + Math.PI/2);
+    lander.vy -= lander.thrust * Math.sin(lander.angle + Math.PI/2);
   }
-
-  lander.vy += 0.04
-
   lander.x += lander.vx;
   lander.y += lander.vy;
-  // 2, Clear screen and draw objects
+
+  lander.vy += 0.04; // Gravity
+  lander.x += lander.vx;
+  lander.y += lander.vy;
+
+  // 2. Clear screen and draw objects
   ctx.clearRect(0, 0, canvas.width, canvas.height);
-  ctx.save();
-  ctx.translate(lander.x, lander.y);
-  ctx.rotate(lander.angle);
 
-  ctx.fillStyle = 'white';
-  ctx.fillRect(-50, -50, 100, 100);
+  // Simply hand the rendering engine the context, the data, and the controls!
+  drawShip(ctx, lander, keys);
 
-  ctx.restore();
-  // 3, Request next frame
+  // 3. Request next frame
   requestAnimationFrame(gameLoop);
 }
-gameLoop()
+
+gameLoop();
