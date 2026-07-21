@@ -47,3 +47,47 @@ export function drawTerrain(ctx) {
 
   ctx.restore();
 }
+
+function lineIntersect(a, b, c, d) {
+  const det = (b.x - a.x) * (d.y - c.y) - (b.y - a.y) * (d.x - c.x);
+  if (det === 0) return false;
+  const lambda = ((d.y - c.y) * (d.x - a.x) + (c.x - d.x) * (d.y - a.y)) / det;
+  const gamma = ((a.y - b.y) * (d.x - a.x) + (b.x - a.x) * (d.y - a.y)) / det;
+  return (0 <= lambda && lambda <= 1) && (0 <= gamma && gamma <= 1);
+}
+
+export function checkTerrainCollision(shipX, shipY, landerRadius = 20) {
+  const distToMoonCenter = Math.hypot(shipX - MOON_CENTER.x, shipY - MOON_CENTER.y);
+
+  // Early exit: skip if lander is high above the moon surface
+  if (distToMoonCenter > MOON_RADIUS + 100) {
+    return { collided: false, isLandingPad: false };
+  }
+
+  // Cast a short ray from ship center down to its landing feet (approx 25px towards moon center)
+  const angleToCenter = Math.atan2(MOON_CENTER.y - shipY, MOON_CENTER.x - shipX);
+  const p1 = { x: shipX, y: shipY };
+  const p2 = {
+    x: shipX + Math.cos(angleToCenter) * 25,
+    y: shipY + Math.sin(angleToCenter) * 25
+  };
+
+  for (let i = 0; i < moonPoints.length; i++) {
+    const nextIdx = (i + 1) % moonPoints.length;
+    const a = moonPoints[i];
+    const b = moonPoints[nextIdx];
+
+    if (lineIntersect(p1, p2, a, b)) {
+      // Line segments 72, 73, 74, 75 form the landing pad
+      const isLandingPad = (i >= 72 && i <= 75);
+
+      return {
+        collided: true,
+        isLandingPad: isLandingPad,
+        index: i
+      };
+    }
+  }
+
+  return { collided: false, isLandingPad: false };
+}
