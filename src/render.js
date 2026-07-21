@@ -6,7 +6,6 @@
 
 export function drawShip(ctx, lander, keys) {
   ctx.save();
-  ctx.translate(lander.x, lander.y);
   ctx.rotate(lander.angle);
 
   ctx.strokeStyle = 'white';
