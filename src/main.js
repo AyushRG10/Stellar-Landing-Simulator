@@ -1,6 +1,6 @@
 import { keys } from "./input.js";
 import { drawShip } from "./render.js";
-import { drawTerrain } from "./terrain.js";
+import { drawTerrain, MOON_CENTER, MOON_RADIUS } from "./terrain.js";
 
 const canvas = document.getElementById('gameCanvas');
 const ctx = canvas.getContext('2d');
@@ -8,8 +8,8 @@ canvas.width = window.innerWidth;
 canvas.height = window.innerHeight;
 
 let lander = {
-  x: canvas.width / 2,
-  y: canvas.height / 2,
+  x: MOON_CENTER.x,
+  y: MOON_CENTER.y - MOON_RADIUS - 150,
   angle: 0,
   vx: 0,
   vy: 0,
