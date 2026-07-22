@@ -16,7 +16,7 @@ resizeCanvas();
 let lander;
 let gameState = 'PLAYING'; // 'PLAYING' | 'LANDED' | 'CRASHED'
 
-const MAX_LANDING_SPEED = 1.8;
+const MAX_LANDING_SPEED = 2;
 const MAX_LANDING_ANGLE = 0.25;
 
 function resetGame() {
@@ -69,11 +69,7 @@ function gameLoop() {
       const speed = Math.hypot(lander.vx, lander.vy);
       const normalizedAngle = Math.atan2(Math.sin(lander.angle), Math.cos(lander.angle));
 
-      if (
-        collision.isLandingPad &&
-        speed <= MAX_LANDING_SPEED &&
-        Math.abs(normalizedAngle) <= MAX_LANDING_ANGLE
-      ) {
+      if (collision.isLandingPad && speed <= MAX_LANDING_SPEED && Math.abs(normalizedAngle) <= MAX_LANDING_ANGLE) {
         gameState = 'LANDED';
       } else {
         gameState = 'CRASHED';
