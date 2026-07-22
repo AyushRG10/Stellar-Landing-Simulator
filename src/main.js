@@ -103,26 +103,105 @@ function gameLoop() {
 }
 
 function drawUI() {
-  const speed = Math.hypot(lander.vx, lander.vy).toFixed(2);
-  ctx.fillStyle = '#ffffff';
-  ctx.font = '16px monospace';
-  ctx.fillText(`Speed: ${speed}`, 20, 30);
+  const dx = lander.x - MOON_CENTER.x;
+  const dy = lander.y - MOON_CENTER.y;
+  const distance = Math.hypot(dx, dy);
+
+  const altitude = Math.max(0, distance - MOON_RADIUS).toFixed(1);
+  const totalSpeed = Math.hypot(lander.vx, lander.vy);
+  const normalizedAngle = Math.atan2(Math.sin(lander.angle), Math.cos(lander.angle));
+  const pitchDegrees = (normalizedAngle * (180 / Math.PI)).toFixed(1);
+
+  const isSpeedSafe = totalSpeed <= MAX_LANDING_SPEED;
+  const isAngleSafe = Math.abs(normalizedAngle) <= MAX_LANDING_ANGLE;
+
+  ctx.save();
+
+  ctx.fillStyle = 'rgba(15, 23, 42, 0.75)';
+  ctx.strokeStyle = '#334155';
+  ctx.lineWidth = 1;
+  ctx.fillRect(15, 15, 220, 150);
+  ctx.strokeRect(15, 15, 220, 150);
+
+  ctx.font = '12px monospace';
+  ctx.fillStyle = '#94a4b8';
+  ctx.fillText('FLIGHT TELEMETRY', 25, 33);
+
+  ctx.font = '14px monospace';
+  ctx.fillStyle = '#94a3b8';
+  ctx.fillText(`ALTITUDE ${altitude} m`, 25, 50);
+  ctx.fillText(`LAT VEL: ${lander.vx.toFixed(2)} m/s`, 25, 78);
+  ctx.fillText(`VERT VEL: ${lander.vy.toFixed(2)} m/s`, 25, 98);
+
+  ctx.fillStyle = isSpeedSafe ? '#4ade80' : '#f87171';
+  ctx.fillText(`SPEED: ${totalSpeed.toFixed(2) / MAX_LANDING_SPEED} m/s`, 25, 118);
+
+  ctx.fillStyle = isAngleSafe ? '#4ade80' : '#f87171';
+  ctx.fillText(`PITCH: ${pitchDegrees}°`, 25, 138);
+
+  const minimapSize = 160;
+  const minimapX = canvas.width - minimapSize - 20;
+  const minimapY = 20;
+  const minimapRadius = minimapSize / 2;
+  const minimapCenter = { x: minimapX + minimapRadius, y: minimapY + minimapRadius };
+
+  ctx.fillStyle = 'rgba(15, 23, 42, 0.85)';
+  ctx.fillRect(minimapX, minimapY, minimapSize, minimapSize);
+  ctx.strokeStyle = '#38bdf8';
+  ctx.strokeRect(minimapX, minimapY, minimapSize, minimapSize);
+
+  const minimapScale = (minimapRadius - 10) / (MOON_RADIUS * 2.5);
+
+  ctx.save();
+  ctx.beginPath();
+  ctx.rect(minimapX, minimapY, minimapSize, minimapSize);
+  ctx.clip();
+
+  ctx.fillStyle = '#475569';
+  ctx.beginPath();
+  ctx.arc(minimapCenter.x, minimapCenter.y, MOON_RADIUS * minimapScale, 0, 2 * Math.PI);
+  ctx.fill();
+
+  const mapLanderX = minimapCenter.x + (lander.x - MOON_CENTER.x) * minimapScale;
+  const mapLanderY = minimapCenter.y + (lander.y - MOON_CENTER.y) * minimapScale;
+
+  ctx.fillStyle = '#facc15';
+  ctx.beginPath();
+  ctx.arc(mapLanderX, mapLanderY, 3, 0, 2 * Math.PI);
+  ctx.fill();
+
+  ctx.strokeStyle = 'rgba(250, 204, 21, 0.4)';
+  ctx.setLineDash([2, 2]);
+  ctx.beginPath();
+  ctx.moveTo(minimapCenter.x, minimapCenter.y);
+  ctx.lineTo(mapLanderX, mapLanderY);
+  ctx.stroke();
+
+  ctx.restore();
+
+  ctx.fillStyle = '#38bdf8';
+  ctx.font = '10px monospace';
+  ctx.fillText('RADAR', minimapX + 8, minimapY + 15);
 
   if (gameState === 'LANDED') {
     ctx.fillStyle = '#4ade80';
     ctx.font = 'bold 36px monospace';
     ctx.textAlign = 'center';
-    ctx.fillText('SUCCESSFUL LANDING!', canvas.width / 2, 100);
+    ctx.fillText('TOUCHDOWN SUCCESSFUL', canvas.width / 2, 100);
     ctx.font = '18px monospace';
+    ctx.fillStyle = '#ffffff';
     ctx.fillText('Press R or Space to Restart', canvas.width / 2, 140);
   } else if (gameState === 'CRASHED') {
     ctx.fillStyle = '#ef4444';
     ctx.font = 'bold 36px monospace';
     ctx.textAlign = 'center';
-    ctx.fillText('CRASHED!', canvas.width / 2, 100);
+    ctx.fillText('CRASHED', canvas.width / 2, 100);
     ctx.font = '18px monospace';
+    ctx.fillStyle = '#ffffff';
     ctx.fillText('Press R or Space to Restart', canvas.width / 2, 140);
   }
+
+  ctx.restore();
 }
 
 // Start the loop

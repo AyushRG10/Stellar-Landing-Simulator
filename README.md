@@ -13,6 +13,7 @@ This project is lightweight, web-native 2D space flight simulator that models so
 * **Precise Raycast Collision System:** Detects impact points on line segments using Cramer's Rule for linear equations.
 * **Real-time Vector Thrusting:** Translates rotation and thruster input into true polar-to-Cartesian acceleration vectors.
 * **Zero-Dependency Web Build:** Loads instantly in any browser without compile steps or server configuration.
+* **HUD:** Includes Altitude, Speed, and Pitch allowing the user to see if they are safe to land as well as a minimap of the terrain so they do not get lost.
 
 ## How to Play
 
