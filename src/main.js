@@ -50,8 +50,12 @@ function gameLoop() {
       lander.vy -= lander.thrust * Math.sin(lander.angle + Math.PI / 2);
     }
 
-    const GRAVITY_STRENGTH = 0.04;
-    const angleToMoon = Math.atan2(MOON_CENTER.y - lander.y, MOON_CENTER.x - lander.x);
+    const dx = MOON_CENTER.x - lander.x;
+    const dy = MOON_CENTER.y - lander.y;
+    const distance = Math.hypot(dx, dy);
+    const GRAVITY_CONSTANT = 60000;
+    const angleToMoon = Math.atan2(dy, dx);
+    const GRAVITY_STRENGTH = GRAVITY_CONSTANT / (distance * distance);
     lander.vx += GRAVITY_STRENGTH * Math.cos(angleToMoon);
     lander.vy += GRAVITY_STRENGTH * Math.sin(angleToMoon);
 
