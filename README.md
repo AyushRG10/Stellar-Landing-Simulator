@@ -21,6 +21,12 @@ This project is lightweight, web-native 2D space flight simulator that models so
 * **Impact Speed:** Maintain a velocity that is less than 1.8 px/frame
 * **Tilt Angle:** Land at an angle that is nearly upright with a range of pi/2 +- 0.25 radians
 
+### Controls
+
+* **Up Arrow:** Increase thrust - Move Forward
+* **Left Arrow:** Tilt ship to the left
+* **Right Arrow:** Tilt ship to the right
+
 ## Physics
 
 ### 1. Vector Acceleration & Kinematics (Euler Integration) Position and velocity update every frame using Explicit Euler Integration:
