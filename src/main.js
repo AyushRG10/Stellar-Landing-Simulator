@@ -40,47 +40,55 @@ window.addEventListener('keydown', (e) => {
   }
 });
 
-function gameLoop() {
-  // 1. Physics & Logic Update
-  if (gameState === 'PLAYING') {
-    if (keys.ArrowLeft)  lander.angle -= 0.02;
-    if (keys.ArrowRight) lander.angle += 0.02;
-    if (keys.ArrowUp) {
-      lander.vx -= lander.thrust * Math.cos(lander.angle + Math.PI / 2);
-      lander.vy -= lander.thrust * Math.sin(lander.angle + Math.PI / 2);
-    }
+// ----------------------------------------------------
+// 1. PHYSICS UPDATE (Fixed Timestep)
+// ----------------------------------------------------
+function updatePhysics() {
+  // FIX 1: Run physics ONLY while playing (was erroneously returning when 'PLAYING')
+  if (gameState !== 'PLAYING') return;
 
-    const dx = MOON_CENTER.x - lander.x;
-    const dy = MOON_CENTER.y - lander.y;
-    const distance = Math.hypot(dx, dy);
-    const GRAVITY_CONSTANT = 60000;
-    const angleToMoon = Math.atan2(dy, dx);
-    const GRAVITY_STRENGTH = GRAVITY_CONSTANT / (distance * distance);
-    lander.vx += GRAVITY_STRENGTH * Math.cos(angleToMoon);
-    lander.vy += GRAVITY_STRENGTH * Math.sin(angleToMoon);
-
-    lander.x += lander.vx;
-    lander.y += lander.vy;
-
-    // Collision Check
-    const collision = checkTerrainCollision(lander.x, lander.y);
-
-    if (collision.collided) {
-      const speed = Math.hypot(lander.vx, lander.vy);
-      const normalizedAngle = Math.atan2(Math.sin(lander.angle), Math.cos(lander.angle));
-
-      if (collision.isLandingPad && speed <= MAX_LANDING_SPEED && Math.abs(normalizedAngle) <= MAX_LANDING_ANGLE) {
-        gameState = 'LANDED';
-      } else {
-        gameState = 'CRASHED';
-      }
-
-      lander.vx = 0;
-      lander.vy = 0;
-    }
+  if (keys.ArrowLeft)  lander.angle -= 0.02;
+  if (keys.ArrowRight) lander.angle += 0.02;
+  if (keys.ArrowUp) {
+    lander.vx -= lander.thrust * Math.cos(lander.angle + Math.PI / 2);
+    lander.vy -= lander.thrust * Math.sin(lander.angle + Math.PI / 2);
   }
 
-  // 2. Render Scene (Runs once per frame regardless of gameState)
+  // Gravity calculation towards moon center
+  const dx = MOON_CENTER.x - lander.x;
+  const dy = MOON_CENTER.y - lander.y;
+  const distance = Math.hypot(dx, dy);
+  const GRAVITY_CONSTANT = 60000;
+  const angleToMoon = Math.atan2(dy, dx);
+  const GRAVITY_STRENGTH = GRAVITY_CONSTANT / (distance * distance);
+  lander.vx += GRAVITY_STRENGTH * Math.cos(angleToMoon);
+  lander.vy += GRAVITY_STRENGTH * Math.sin(angleToMoon);
+
+  lander.x += lander.vx;
+  lander.y += lander.vy;
+
+  // Collision Check
+  const collision = checkTerrainCollision(lander.x, lander.y);
+
+  if (collision.collided) {
+    const speed = Math.hypot(lander.vx, lander.vy);
+    const normalizedAngle = Math.atan2(Math.sin(lander.angle), Math.cos(lander.angle));
+
+    if (collision.isLandingPad && speed <= MAX_LANDING_SPEED && Math.abs(normalizedAngle) <= MAX_LANDING_ANGLE) {
+      gameState = 'LANDED';
+    } else {
+      gameState = 'CRASHED';
+    }
+
+    lander.vx = 0;
+    lander.vy = 0;
+  }
+}
+
+// ----------------------------------------------------
+// 2. RENDERING LOGIC
+// ----------------------------------------------------
+function render() {
   ctx.clearRect(0, 0, canvas.width, canvas.height);
 
   ctx.save();
@@ -95,11 +103,7 @@ function gameLoop() {
 
   ctx.restore();
 
-  // 3. Render UI Overlay
   drawUI();
-
-  // 4. Request NEXT frame ONLY ONCE
-  requestAnimationFrame(gameLoop);
 }
 
 function drawUI() {
@@ -117,6 +121,7 @@ function drawUI() {
 
   ctx.save();
 
+  // Telemetry Box
   ctx.fillStyle = 'rgba(15, 23, 42, 0.75)';
   ctx.strokeStyle = '#334155';
   ctx.lineWidth = 1;
@@ -134,11 +139,12 @@ function drawUI() {
   ctx.fillText(`VERT VEL: ${lander.vy.toFixed(2)} m/s`, 25, 98);
 
   ctx.fillStyle = isSpeedSafe ? '#4ade80' : '#f87171';
-  ctx.fillText(`SPEED: ${totalSpeed.toFixed(2) / MAX_LANDING_SPEED} m/s`, 25, 118);
+  ctx.fillText(`SPEED: ${(totalSpeed / MAX_LANDING_SPEED).toFixed(2)} m/s`, 25, 118);
 
   ctx.fillStyle = isAngleSafe ? '#4ade80' : '#f87171';
   ctx.fillText(`PITCH: ${pitchDegrees}°`, 25, 138);
 
+  // Radar / Minimap
   const minimapSize = 160;
   const minimapX = canvas.width - minimapSize - 20;
   const minimapY = 20;
@@ -183,6 +189,7 @@ function drawUI() {
   ctx.font = '10px monospace';
   ctx.fillText('RADAR', minimapX + 8, minimapY + 15);
 
+  // Status overlay
   if (gameState === 'LANDED') {
     ctx.fillStyle = '#4ade80';
     ctx.font = 'bold 36px monospace';
@@ -204,5 +211,34 @@ function drawUI() {
   ctx.restore();
 }
 
-// Start the loop
+// ----------------------------------------------------
+// 3. FIXED TIMESTEP GAME LOOP
+// ----------------------------------------------------
+let lastTime = performance.now();
+let accumulator = 0;
+
+const TICKS_PER_SECOND = 60;
+const TIME_STEP = 1000 / TICKS_PER_SECOND; // ~16.67 ms per update
+
+function gameLoop(currentTime) {
+  let frameTime = currentTime - lastTime;
+  lastTime = currentTime;
+
+  if (frameTime > 250) {
+    frameTime = 250;
+  }
+
+  accumulator += frameTime;
+
+  while (accumulator >= TIME_STEP) {
+    updatePhysics();
+    accumulator -= TIME_STEP;
+  }
+
+  render();
+
+  requestAnimationFrame(gameLoop);
+}
+
+// FIX 2: Start the game loop
 requestAnimationFrame(gameLoop);
